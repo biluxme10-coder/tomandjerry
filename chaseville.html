@@ -1,1 +1,1035 @@
+<!DOCTYPE html>
 
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tom &amp; Jerry Archive</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&amp;family=Nunito:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --cream:#FFF3DE;
+    --paper:#FFFBF2;
+    --ink:#241C14;
+    --ink-soft:#5A4D3D;
+    --cheese:#F5B942;
+    --cheese-dark:#DE9A1F;
+    --tom:#5B7C99;
+    --tom-dark:#3E5A73;
+    --jerry:#B5651D;
+    --jerry-dark:#8C4B12;
+    --danger:#C1442E;
+    --line: rgba(36,28,20,0.14);
+    --shadow: rgba(36,28,20,0.18);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Nunito',sans-serif;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fredoka',sans-serif;
+    font-weight:600;
+    margin:0;
+  }
+  a{color:inherit;}
+  button{font-family:inherit;}
+  /* ---------- shrink wrapper (cartoon spring physics) ---------- */
+  #shrinkRoot{
+    transform-origin: center top;
+    transition: transform 0.16s cubic-bezier(0.25, 1.4, 0.45, 1);
+    will-change: transform;
+  }
+  #app{
+    min-height:100vh;
+  }
+  /* ---------- background texture ---------- */
+  .holes{
+    position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:0;
+  }
+  .holes span{
+    position:absolute; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #FFE2A6, var(--cheese) 70%);
+    opacity:0.35;
+  }
+  /* ---------- header ---------- */
+  header{
+    position:relative; z-index:2;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 6vw;
+    border-bottom:2px solid var(--line);
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-size:22px; letter-spacing:0.2px;
+  }
+  .logo .dot{
+    width:12px;height:12px;border-radius:50%;
+    background:var(--jerry);
+    box-shadow: 16px 0 0 var(--tom);
+    margin-right:14px;
+  }
+  nav{display:flex; align-items:center; gap:16px; font-weight:700;}
+  nav .nav-link{opacity:0.75; text-decoration:none; font-size:15px; cursor:default;}
+  .btn{
+    border:none; border-radius:999px; cursor:pointer;
+    font-family:'Fredoka',sans-serif; font-weight:600;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn:active{transform: translateY(1px) scale(0.98);}
+  .btn-primary{
+    background:var(--ink); color:var(--cream);
+    padding:11px 24px; font-size:15px;
+    box-shadow:0 3px 0 var(--jerry-dark);
+  }
+  .btn-primary:hover{box-shadow:0 4px 0 var(--jerry-dark); transform:translateY(-1px);}
+  .btn-shrink-pill{
+    background:var(--cheese); color:var(--ink);
+    padding:9px 20px; font-size:14px; font-weight:800;
+    box-shadow:0 3px 0 var(--cheese-dark);
+    display:flex; align-items:center; gap:6px;
+  }
+  .btn-shrink-pill:hover{transform:translateY(-1px); box-shadow:0 4px 0 var(--cheese-dark);}
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative; z-index:1;
+    padding:9vh 6vw 8vh;
+    display:grid; grid-template-columns: 1.15fr 0.85fr; gap:40px; align-items:center;
+  }
+  .hero h1{
+    font-size:clamp(42px, 6vw, 74px);
+    line-height:1.02;
+    color:var(--ink);
+  }
+  .hero h1 .accent{color:var(--jerry);}
+  .hero p{
+    margin-top:22px; max-width:46ch;
+    font-size:18px; line-height:1.6; color:var(--ink-soft); font-weight:600;
+  }
+  .hero-cta{margin-top:32px; display:flex; gap:14px; flex-wrap:wrap;}
+  .btn-ghost{
+    background:transparent; color:var(--ink); padding:11px 22px; font-size:15px;
+    border:2.5px solid var(--ink);
+  }
+  .hero-art{
+    position:relative; aspect-ratio:1/1; max-width:380px; justify-self:end;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cheese-shape{
+    width:100%; height:100%;
+    background: linear-gradient(155deg, var(--cheese), var(--cheese-dark));
+    border-radius: 44% 56% 61% 39% / 45% 40% 60% 55%;
+    position:relative;
+    box-shadow: 0 24px 50px var(--shadow);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cheese-shape .hole{
+    position:absolute; border-radius:50%;
+    background:var(--cream);
+    box-shadow: inset 0 6px 10px rgba(0,0,0,0.15);
+  }
+  .cheese-shape .emoji{font-size:96px;}
+  /* ---------- section headers ---------- */
+  .section-head{
+    padding:0 6vw; margin:70px 0 26px; position:relative; z-index:1;
+  }
+  .section-head h2{font-size:clamp(26px,3vw,34px);}
+  .section-head p{color:var(--ink-soft); font-weight:700; margin-top:6px; font-size:15px;}
+  /* ---------- cards grid ---------- */
+  .cards{
+    position:relative; z-index:1;
+    padding: 0 6vw 40px;
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap:22px;
+  }
+  .card{
+    background:var(--paper);
+    border:2px solid var(--ink);
+    border-radius:20px;
+    padding:26px;
+    cursor:pointer;
+    position:relative;
+    box-shadow:6px 6px 0 var(--line);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .card:nth-child(3n+1){transform:rotate(-1deg);}
+  .card:nth-child(3n+2){transform:rotate(0.6deg);}
+  .card:nth-child(3n){transform:rotate(-0.4deg);}
+  .card:hover{
+    transform: translateY(-6px) rotate(0deg);
+    box-shadow:10px 10px 0 var(--jerry);
+  }
+  .card .tag{
+    display:inline-block; font-size:12px; font-weight:800;
+    padding:4px 10px; border-radius:999px; margin-bottom:14px;
+    background:var(--tom); color:white;
+  }
+  .card:nth-child(even) .tag{background:var(--jerry);}
+  .card h3{font-size:21px; margin-bottom:8px;}
+  .card p{font-size:14.5px; color:var(--ink-soft); line-height:1.55; font-weight:600;}
+  .card .lock{
+    position:absolute; top:22px; right:22px; font-size:20px; opacity:0.55;
+  }
+  /* ---------- cartoon mouse hole wall baseboard ---------- */
+  .mouse-hole-section{
+    margin-top:50px;
+    background:#D8A868;
+    border-top:6px solid #8C4B12;
+    padding:24px 6vw 0;
+    position:relative;
+    display:flex; flex-direction:column; align-items:center;
+    box-shadow:inset 0 6px 12px rgba(0,0,0,0.12);
+  }
+  .mouse-hole-label{
+    font-size:13px; font-weight:800; color:#5A4D3D; margin-bottom:12px; text-transform:uppercase; letter-spacing:1.5px;
+  }
+  .mouse-hole{
+    width:84px; height:74px;
+    background:#1A140E;
+    border-radius:50px 50px 0 0;
+    border:6px solid #5A4D3D;
+    border-bottom:none;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+    box-shadow: inset 0 10px 16px rgba(0,0,0,0.8);
+  }
+  .jerry-peep{
+    font-size:32px;
+    animation: peep 2s infinite ease-in-out;
+  }
+  @keyframes peep{
+    0%, 100%{ transform: translateY(14px) scale(0.9); }
+    50%{ transform: translateY(-2px) scale(1.05); }
+  }
+  footer{
+    position:relative; z-index:1;
+    padding:28px 6vw 40px; border-top:2px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:13px; color:var(--ink-soft); font-weight:700; flex-wrap:wrap; gap:12px;
+  }
+  /* ---------- overlays (Outside shrinkRoot so fixed centering NEVER breaks) ---------- */
+  .overlay{
+    position:fixed; inset:0; z-index:50;
+    background: rgba(36,28,20,0.55);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .hidden{display:none !important;}
+  .panel{
+    background:var(--paper);
+    width:100%; max-width:420px;
+    border-radius:18px;
+    border:2px solid var(--ink);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    padding:34px 32px;
+    position:relative;
+    transform-origin: center center;
+    transition: transform 0.16s cubic-bezier(0.25, 1.4, 0.45, 1);
+  }
+  .panel .close{
+    position:absolute; top:16px; right:18px;
+    background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink-soft);
+  }
+  .panel-logo{
+    display:flex; align-items:center; gap:8px; margin-bottom:6px;
+  }
+  .panel-logo .dot{width:10px;height:10px;border-radius:50%;background:var(--jerry); box-shadow:13px 0 0 var(--tom);}
+  .panel h2{font-size:24px; margin:14px 0 4px;}
+  .panel .sub{font-size:14px; color:var(--ink-soft); font-weight:700; margin-bottom:22px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:var(--ink-soft);}
+  .field input{
+    width:100%; padding:12px 14px; border-radius:10px;
+    border:2px solid var(--line); font-size:15px; font-family:inherit;
+    background:white;
+  }
+  .field input:focus{outline:none; border-color:var(--tom);}
+  .row-between{display:flex; justify-content:space-between; align-items:center; font-size:13px; font-weight:700; margin:14px 0 20px;}
+  .row-between a, .linklike{color:var(--tom-dark); text-decoration:none; cursor:pointer; background:none; border:none; font:inherit; font-weight:800; padding:0;}
+  .row-between a:hover, .linklike:hover{text-decoration:underline;}
+  .full{width:100%; padding:13px; font-size:15.5px;}
+  .error-box{
+    background:#FBE7E2; border:1.5px solid var(--danger); color:var(--danger);
+    padding:10px 12px; border-radius:10px; font-size:13.5px; font-weight:700;
+    margin-bottom:16px; display:none;
+  }
+  .shake{animation:shake 0.45s;}
+  @keyframes shake{
+    10%,90%{transform:translateX(-1px);}
+    20%,80%{transform:translateX(2px);}
+    30%,50%,70%{transform:translateX(-5px);}
+    40%,60%{transform:translateX(5px);}
+  }
+  .divider{display:flex; align-items:center; gap:10px; margin:20px 0; font-size:12px; color:var(--ink-soft); font-weight:800;}
+  .divider::before, .divider::after{content:""; flex:1; height:1px; background:var(--line);}
+  .social-row{display:flex; gap:10px;}
+  .social-btn{
+    flex:1; padding:10px; border-radius:10px; border:2px solid var(--line);
+    background:white; font-weight:800; font-size:13px; cursor:pointer;
+  }
+  .step-progress{display:flex; gap:6px; margin-bottom:22px;}
+  .step-progress span{height:5px; flex:1; border-radius:99px; background:var(--line);}
+  .step-progress span.done{background:var(--jerry);}
+  /* captcha */
+  .captcha-box{
+    border:2px solid var(--line); border-radius:12px; padding:16px; margin-bottom:18px; background:white;
+  }
+  .captcha-row{display:flex; align-items:center; gap:14px;}
+  #robotCheck{
+    width:26px; height:26px; border:2.5px solid var(--ink-soft); border-radius:6px;
+    background:white; position:relative; cursor:pointer; flex-shrink:0;
+    transition: left 0.15s ease, top 0.15s ease;
+  }
+  .captcha-wrap{position:relative; height:56px;}
+  .captcha-caption{font-size:11px; color:var(--ink-soft); text-align:right; font-weight:700;}
+  .img-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px;}
+  .img-grid div{
+    aspect-ratio:1/1; border-radius:8px; border:2px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:26px;
+    background:#FFF7E6; cursor:pointer; user-select:none;
+  }
+  .img-grid div.picked{border-color:var(--jerry); background:#FBE3CE;}
+  .progress-track{
+    height:12px; border-radius:99px; background:var(--line); overflow:hidden; margin:18px 0 8px;
+  }
+  .progress-fill{
+    height:100%; width:0%; background:var(--tom); border-radius:99px; transition:width 0.25s ease;
+  }
+  .center-text{text-align:center;}
+  .big-emoji{font-size:52px; margin-bottom:10px;}
+  /* ---------- end screens ---------- */
+  #escapeScreen, #shutdownScreen{
+    position:fixed; inset:0; z-index:200;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    padding:20px;
+  }
+  #escapeScreen{background:var(--cheese);}
+  #escapeScreen .big{font-size:clamp(40px,8vw,80px); font-family:'Fredoka',sans-serif;}
+  #shutdownScreen{background:#0A0A0A; color:#eee;}
+  
+  @keyframes blinkEyes {
+    0%, 88%, 100% { opacity: 1; transform: scaleY(1); }
+    94% { opacity: 0; transform: scaleY(0.1); }
+  }
+  /* ---------- CARTOON SHRINK-O-METER BANNER ---------- */
+  #shrinkHint{
+    position:fixed; top:18px; left:50%; transform:translateX(-50%);
+    z-index:9999;
+    background:var(--ink); color:var(--cream);
+    padding:12px 24px; border-radius:18px;
+    box-shadow:0 12px 35px rgba(36,28,20,0.45);
+    border:3px solid var(--cheese);
+    text-align:center;
+    pointer-events:none;
+    min-width:320px;
+    max-width:90vw;
+    font-family:'Fredoka',sans-serif;
+  }
+  .hint-header{
+    display:flex; justify-content:space-between; align-items:center;
+    font-weight:700; font-size:15px; margin-bottom:6px;
+  }
+  .hint-badge{
+    background:var(--cheese); color:var(--ink);
+    padding:3px 10px; border-radius:99px; font-size:12px; font-weight:800;
+  }
+  .hint-bar-track{
+    width:100%; height:10px; background:rgba(255,255,255,0.22);
+    border-radius:99px; overflow:hidden; margin-bottom:6px;
+  }
+  .hint-bar-fill{
+    width:100%; height:100%; background:var(--cheese);
+    border-radius:99px; transition:width 0.15s ease;
+  }
+  .hint-msg{
+    font-size:12px; color:#FFE2A6; font-family:'Nunito',sans-serif; font-weight:700;
+  }
+  @media (max-width:820px){
+    .hero{grid-template-columns:1fr;}
+    .hero-art{justify-self:center; max-width:260px; margin-top:20px;}
+    nav .nav-link{display:none;}
+  }
+</style>
+<style>
+/* Exact second-code login screen opened from Forgot password */
+#secondLoginOverlay{position:fixed;inset:0;z-index:10000;background:#fff4d9;display:none;}
+#secondLoginOverlay.shown{display:block;}
+#secondLoginOverlay iframe{width:100%;height:100%;border:0;display:block;}
+#secondLoginClose{position:absolute;top:14px;right:18px;z-index:10001;width:40px;height:40px;border-radius:50%;border:2px solid #241C14;background:#FFF3DE;color:#241C14;font:700 18px Nunito,sans-serif;cursor:pointer;box-shadow:0 3px 0 #8C4B12;}
+</style></head>
+<body>
+<!-- ========== THE SHRINKING WEBSITE WRAPPER ========== -->
+<div id="shrinkRoot">
+<div id="app">
+<div class="holes">
+<span style="width:180px;height:180px; top:-60px; left:-60px;"></span>
+<span style="width:120px;height:120px; top:40%; right:-40px;"></span>
+<span style="width:90px;height:90px; bottom:5%; left:8%;"></span>
+</div>
+<header>
+<div class="logo">
+<span class="dot"></span>
+<span class="display">Tom &amp; Jerry Archive</span>
+</div>
+<nav>
+<span class="nav-link">Episodes</span>
+<span class="nav-link">Characters</span>
+<button class="btn btn-shrink-pill" onclick="quickTestShrink()" title="Trigger the shrinking gag!">🧀 Trigger Shrink Gag</button>
+<button class="btn btn-primary" onclick="openLogin()">Log in</button>
+</nav>
+</header>
+<section class="hero">
+<div>
+<h1>Ninety years of a cat<br/>who never <span class="accent">quite</span><br/>catches the mouse.</h1>
+<p>A small fan archive of the chase, the characters, and the noise a frying pan makes on a cat's head. Sign in to unlock the full profiles — you won't, but you're welcome to try.</p>
+<div class="hero-cta">
+<button class="btn btn-primary" onclick="quickTestShrink()">🧀 Trigger Shrink Gag</button>
+<button class="btn btn-ghost" onclick="document.getElementById('cardsGrid').scrollIntoView({behavior:'smooth'})">Browse cards</button>
+</div>
+</div>
+<div class="hero-art">
+<div class="cheese-shape">
+<div class="hole" style="width:46px;height:46px; top:22%; left:20%;"></div>
+<div class="hole" style="width:30px;height:30px; top:60%; left:60%;"></div>
+<div class="hole" style="width:20px;height:20px; top:30%; left:65%;"></div>
+<div class="hole" style="width:60px;height:60px; bottom:10%; left:10%;"></div>
+<span class="emoji">🐭</span>
+</div>
+</div>
+</section>
+<div class="section-head">
+<h2>The archive</h2>
+<p>Eight cards. Zero of them will open without an account.</p>
+</div>
+<section class="cards" id="cardsGrid">
+<div class="card" onclick="openLogin()">
+<span class="tag">Character</span>
+<span class="lock">🔒</span>
+<h3>Tom</h3>
+<p>A blue-grey house cat with a full-time job and a 0% success rate at it. Has been flattened, exploded, and folded into an accordion more times than HR would allow.</p>
+</div>
+<div class="card" onclick="openLogin()">
+<span class="tag">Character</span>
+<span class="lock">🔒</span>
+<h3>Jerry</h3>
+<p>A brown house mouse with excellent real-estate instincts — he has lived rent-free inside a wall for nine decades and has never once been evicted.</p>
+</div>
+<div class="card" onclick="openLogin()">
+<span class="tag">Character</span>
+<span class="lock">🔒</span>
+<h3>Spike &amp; Tyke</h3>
+<p>A bulldog with exactly one rule: don't wake the baby. Tom breaks this rule in nearly every episode he appears in, on purpose, somehow.</p>
+</div>
+<div class="card" onclick="openLogin()">
+<span class="tag">Trivia</span>
+<span class="lock">🔒</span>
+<h3>The first chase</h3>
+<p>"Puss Gets the Boot" premiered in 1940. Jerry wasn't named Jerry yet. Nobody involved thought there'd be a second one, let alone two hundred.</p>
+</div>
+<div class="card" onclick="openLogin()">
+<span class="tag">Trivia</span>
+<span class="lock">🔒</span>
+<h3>Seven Oscars</h3>
+<p>The Tom and Jerry shorts won seven Academy Awards for Best Animated Short Film — more than any other character-based theatrical cartoon series.</p>
+</div>
+<div class="card" onclick="openLogin()">
+<span class="tag">Object</span>
+<span class="lock">🔒</span>
+<h3>The frying pan</h3>
+<p>Deployed in roughly every third episode. Structural integrity: questionable. Comedic reliability: perfect. Insurance would never cover this household.</p>
+</div>
+<div class="card" onclick="openLogin()">
+<span class="tag">Character</span>
+<span class="lock">🔒</span>
+<h3>Nibbles / Tuffy</h3>
+<p>A tiny orphaned mouse who eats his body weight in cheese per episode and somehow still needs Jerry to babysit him through a war zone of a kitchen.</p>
+</div>
+<div class="card" onclick="openLogin()">
+<span class="tag">Trivia</span>
+<span class="lock">🔒</span>
+<h3>Almost no dialogue</h3>
+<p>Most classic shorts run on sound effects and orchestral score instead of spoken lines — one of the few cartoons that translates perfectly with the volume up and the subtitles off.</p>
+</div>
+</section>
+<!-- cartoon baseboard & mouse hole -->
+<div class="mouse-hole-section">
+<span class="mouse-hole-label">Jerry's Wall Sanctuary</span>
+<div class="mouse-hole">
+<span class="jerry-peep">🐭</span>
+</div>
+</div>
+<footer>
+<span>Tom &amp; Jerry Archive — a fan project, not affiliated with anyone who could sue us.</span>
+<span>Built for Useless Projects · 100% functional, 0% useful</span>
+<button class="btn btn-ghost" onclick="quickTestShrink()" style="padding:5px 14px; font-size:12px; border-radius:8px; border-width:1.5px; opacity:0.85;">🐭 Test Shrink Gag (Press 'S')</button>
+</footer>
+</div>
+</div><!-- /#shrinkRoot -->
+<!-- ========== OVERLAYS (Outside shrinkRoot so fixed centering NEVER breaks) ========== -->
+<div class="overlay hidden" id="loginOverlay">
+<div class="panel" id="loginPanel">
+<button class="close" onclick="closeOverlay('loginOverlay')">✕</button>
+<div class="panel-logo"><span class="dot"></span><strong>Tom &amp; Jerry Archive</strong></div>
+<h2>Welcome back</h2>
+<div class="sub">Log in to unlock the full profile.</div>
+<div class="error-box" id="loginError">That email and password don't match any account. Try again.</div>
+<form id="loginForm" onsubmit="return handleLogin(event)">
+<div class="field">
+<label>Email</label>
+<input placeholder="you@example.com" required="" type="email"/>
+</div>
+<div class="field">
+<label>Password</label>
+<input placeholder="••••••••" required="" type="password"/>
+</div>
+<div class="row-between">
+<label style="display:flex; align-items:center; gap:6px; font-weight:700;">
+<input style="width:auto;" type="checkbox"/> Remember me
+        </label>
+<a href="javascript:void(0)" onclick="openSecondLogin()">Forgot password?</a>
+</div>
+<button class="btn btn-primary full" type="submit">Log in</button>
+</form>
+<div class="divider">OR</div>
+<div class="social-row">
+<button class="social-btn" onclick="fakeSocial()">🧀 Continue with Cheese</button>
+<button class="social-btn" onclick="fakeSocial()">🐾 Continue with Paw ID</button>
+</div>
+</div>
+</div>
+<!-- ========== FORGOT PASSWORD WIZARD ========== -->
+<div class="overlay hidden" id="forgotOverlay">
+<div class="panel" id="forgotPanel">
+<button class="close" onclick="closeOverlay('forgotOverlay')">✕</button>
+<div class="step-progress" id="stepProgress">
+<span></span><span></span><span></span><span></span><span></span>
+</div>
+<!-- step 1: email -->
+<div class="wiz-step" id="step1">
+<h2>Reset your password</h2>
+<div class="sub">Enter your email and we'll start pretending to help.</div>
+<div class="field">
+<label>Email</label>
+<input id="resetEmail" placeholder="you@example.com" type="email"/>
+</div>
+<button class="btn btn-primary full" onclick="goStep(2)">Send verification code</button>
+</div>
+<!-- step 2: fake OTP -->
+<div class="wiz-step hidden" id="step2">
+<h2>Enter the code</h2>
+<div class="sub" id="otpSub">We sent a 6-digit code to your email. Probably.</div>
+<div class="field">
+<label>Verification code</label>
+<input id="otpInput" maxlength="6" placeholder="000000" type="text"/>
+</div>
+<div class="error-box" id="otpError">Incorrect code. Also, we never actually sent one.</div>
+<button class="btn btn-primary full" onclick="checkOtp()">Verify code</button>
+<div class="center-text" style="margin-top:12px;">
+<button class="linklike" onclick="resendOtp()">Resend code</button>
+</div>
+</div>
+<!-- step 3: robot captcha -->
+<div class="wiz-step hidden" id="step3">
+<h2>Quick check</h2>
+<div class="sub">Confirm you're not a robot. (Tom has been flagged twice.)</div>
+<div class="captcha-box">
+<div class="captcha-wrap">
+<div class="captcha-row">
+<div id="robotCheck" onclick="tryCheckRobot()"></div>
+<span style="font-weight:800; font-size:14px;">I am not a robot</span>
+</div>
+</div>
+<div class="captcha-caption">reCAPTCHA-ish · privacy · terms</div>
+</div>
+<div class="sub" id="robotHint" style="margin-top:-8px;">Go ahead, click the box.</div>
+</div>
+<!-- step 4: image captcha -->
+<div class="wiz-step hidden" id="step4">
+<h2>Select all squares with cheese</h2>
+<div class="sub">One is definitely correct. Maybe two. We're not totally sure either.</div>
+<div class="img-grid" id="imgGrid">
+<div onclick="pick(this)">🧀</div>
+<div onclick="pick(this)">🐭</div>
+<div onclick="pick(this)">🧀</div>
+<div onclick="pick(this)">🐾</div>
+<div onclick="pick(this)">🧀</div>
+<div onclick="pick(this)">🐱</div>
+<div onclick="pick(this)">🍕</div>
+<div onclick="pick(this)">🧀</div>
+<div onclick="pick(this)">🦴</div>
+</div>
+<button class="btn btn-primary full" onclick="goStep(5)">Confirm selection</button>
+</div>
+<!-- step 5: verifying progress + final joke -->
+<div class="wiz-step hidden" id="step5">
+<div id="verifyingPart">
+<h2 class="center-text">Verifying you're human…</h2>
+<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+<div class="sub center-text" id="progressLabel">0%</div>
+</div>
+<div class="hidden center-text" id="finalPart">
+<div class="big-emoji">😅</div>
+<h2>Oh. I also forgot your password.</h2>
+<div class="sub">Turns out neither of us knew it. Sorry about the five steps.</div>
+<button class="btn btn-primary full" onclick="triggerTryAgain()">Try again</button>
+</div>
+</div>
+</div>
+</div>
+<!-- ========== SHRINK HINT WITH LIVE CARTOON METER ========== -->
+<div class="hidden" id="shrinkHint">
+<div class="hint-header">
+<span class="hint-badge">🧀 JERRY ESCAPING</span>
+<span id="shrinkPercentText">100%</span>
+</div>
+<div class="hint-bar-track">
+<div class="hint-bar-fill" id="shrinkBarFill"></div>
+</div>
+<div class="hint-msg" id="shrinkMsgText">Every click &amp; key squeezes the website into the mouse hole!</div>
+</div>
+<!-- ========== ESCAPE / SHUTDOWN SCREENS ========== -->
+<div class="hidden" id="escapeScreen">
+<div class="big-emoji">🐭💨</div>
+<div class="big display">Website escaped.</div>
+<p style="font-weight:700; margin-top:12px; font-size:18px;">
+    Jerry squeezed the entire website into the wall! Shutting down in <span id="escapeCountdown" style="color:var(--jerry-dark); font-weight:900;">5</span>s…
+  </p>
+<p style="font-size:14px; opacity:0.75; margin-top:4px;">Tom is outside with a frying pan and zero clues.</p>
+</div>
+<div class="hidden" id="shutdownScreen">
+<div class="big-emoji" style="animation:blinkEyes 3.2s infinite;">👀</div>
+<div class="big display" style="color:#FFF3DE;">Website has shut down.</div>
+<p style="font-weight:700; margin-top:12px; color:#B0A495; max-width:44ch;">
+    Tom searched the whole wall. There was never a password to find.
+  </p>
+<button class="btn btn-primary" onclick="resetEverything()" style="margin-top:24px; background:var(--cheese); color:var(--ink); box-shadow:0 4px 0 var(--cheese-dark);">
+    🔄 Reload the chase
+  </button>
+</div>
+<script>
+  /* ---------- CARTOON SOUND SYNTHESIZER (Web Audio API) ---------- */
+  let audioCtx = null;
+  function playCartoonSound(type){
+    try{
+      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      if(!audioCtx && AudioCtxClass){
+        audioCtx = new AudioCtxClass();
+      }
+      if(!audioCtx) return;
+      if(audioCtx.state === 'suspended'){
+        audioCtx.resume();
+      }
+      const now = audioCtx.currentTime;
+      
+      if(type === 'squeak'){
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        const startFreq = 520 + Math.random() * 200;
+        osc.frequency.setValueAtTime(startFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(startFreq * 1.7, now + 0.07);
+        gain.gain.setValueAtTime(0.09, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      } else if(type === 'escape'){
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(820, now);
+        osc.frequency.exponentialRampToValueAtTime(120, now + 0.45);
+        gain.gain.setValueAtTime(0.16, now);
+        gain.gain.linearRampToValueAtTime(0.005, now + 0.45);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.45);
+      } else if(type === 'pop'){
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(170, now);
+        osc.frequency.exponentialRampToValueAtTime(560, now + 0.04);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.06);
+      }
+    } catch(e){}
+  }
+  /* ---------- LOGIN OVERLAY ---------- */
+  function openLogin(){
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    document.getElementById('loginError').style.display = 'none';
+  }
+  function closeOverlay(id){
+    document.getElementById(id).classList.add('hidden');
+  }
+  function handleLogin(e){
+    e.preventDefault();
+    const panel = document.getElementById('loginPanel');
+    const err = document.getElementById('loginError');
+    err.textContent = "🚨 Access Denied! Tom tripped the alarm, Jerry is stealing the site!";
+    err.style.display = 'block';
+    panel.classList.remove('shake'); void panel.offsetWidth; panel.classList.add('shake');
+    // Starting shrink right away on login attempt!
+    setTimeout(startShrink, 250);
+    return false;
+  }
+  function fakeSocial(){
+    const panel = document.getElementById('loginPanel');
+    const err = document.getElementById('loginError');
+    err.textContent = "Provider offline! Starting shrink chase instead…";
+    err.style.display = 'block';
+    panel.classList.remove('shake'); void panel.offsetWidth; panel.classList.add('shake');
+    setTimeout(startShrink, 250);
+  }
+  /* ---------- FORGOT PASSWORD WIZARD ---------- */
+  let otpTries = 0;
+  function startForgotFlow(){
+    closeOverlay('loginOverlay');
+    document.getElementById('forgotOverlay').classList.remove('hidden');
+    document.getElementById('resetEmail').value = '';
+    document.querySelector('#step1 h2').textContent = 'Reset your password';
+    document.querySelector('#step1 .sub').textContent = "Enter your email and we'll start pretending to help.";
+    document.querySelector('#step1 .btn').textContent = 'Send verification code';
+    goStep(1, true);
+  }
+  function updateProgressDots(step){
+    const dots = document.querySelectorAll('#stepProgress span');
+    dots.forEach((d,i)=> d.classList.toggle('done', i < step));
+  }
+  function goStep(step, silent){
+    document.querySelectorAll('.wiz-step').forEach(s => s.classList.add('hidden'));
+    document.getElementById('step'+step).classList.remove('hidden');
+    updateProgressDots(step);
+    if(step === 2){
+      document.getElementById('otpError').style.display = 'none';
+      otpTries = 0;
+    }
+    if(step === 3){
+      resetRobotBox();
+    }
+    if(step === 5){
+      runVerifyingBar();
+    }
+  }
+  function resendOtp(){
+    const sub = document.getElementById('otpSub');
+    sub.textContent = "Sent again. Still didn't go anywhere.";
+  }
+  function checkOtp(){
+    const err = document.getElementById('otpError');
+    const p = document.getElementById('forgotPanel');
+    otpTries++;
+    // Funny error on 1st click, advances on 2nd click so user reaches the next steps!
+    if(otpTries === 1){
+      err.textContent = "Nope, that code was never real. Try clicking verify once more!";
+      err.style.display = 'block';
+      p.classList.remove('shake'); void p.offsetWidth; panelShake();
+      return;
+    }
+    err.style.display = 'none';
+    goStep(3);
+  }
+  function panelShake(){
+    const p = document.getElementById('forgotPanel');
+    p.classList.remove('shake'); void p.offsetWidth; p.classList.add('shake');
+  }
+  /* runaway "I am not a robot" checkbox */
+  let robotDodges = 0;
+  function resetRobotBox(){
+    robotDodges = 0;
+    const box = document.getElementById('robotCheck');
+    box.style.position = 'static';
+    box.style.left = '';
+    box.style.top = '';
+    box.textContent = '';
+    document.getElementById('robotHint').textContent = "Go ahead, click the box.";
+    box.onmouseenter = function(){
+      if(robotDodges < 3){
+        dodgeRobotBox();
+      }
+    };
+  }
+  function dodgeRobotBox(){
+    const box = document.getElementById('robotCheck');
+    const wrap = document.querySelector('.captcha-wrap');
+    box.style.position = 'absolute';
+    const maxX = Math.max((wrap.offsetWidth || 280) - 38, 15);
+    const maxY = Math.max((wrap.offsetHeight || 52) - 34, 10);
+    const x = Math.random() * maxX;
+    const y = Math.random() * maxY;
+    box.style.left = x + 'px';
+    box.style.top = y + 'px';
+    robotDodges++;
+    const hint = document.getElementById('robotHint');
+    const lines = [
+      "Almost. Try again.",
+      "It saw you coming.",
+      "One more try and it'll let you click!"
+    ];
+    hint.textContent = lines[Math.min(robotDodges-1, lines.length-1)];
+  }
+  function tryCheckRobot(){
+    const box = document.getElementById('robotCheck');
+    box.textContent = '✓';
+    box.style.color = 'green';
+    box.style.fontWeight = '900';
+    box.style.display = 'flex';
+    box.style.alignItems = 'center';
+    box.style.justifyContent = 'center';
+    box.onmouseenter = null;
+    document.getElementById('robotHint').textContent = "Verified. Somehow.";
+    setTimeout(()=> goStep(4), 500);
+  }
+  function pick(el){
+    el.classList.toggle('picked');
+  }
+  function runVerifyingBar(){
+    document.getElementById('verifyingPart').classList.remove('hidden');
+    document.getElementById('finalPart').classList.add('hidden');
+    const fill = document.getElementById('progressFill');
+    const label = document.getElementById('progressLabel');
+    fill.style.width = '0%';
+    let pct = 0;
+    const timer = setInterval(()=>{
+      pct += Math.random()*22 + 10;
+      if(pct >= 100){
+        pct = 100;
+        clearInterval(timer);
+        setTimeout(()=>{
+          document.getElementById('verifyingPart').classList.add('hidden');
+          document.getElementById('finalPart').classList.remove('hidden');
+        }, 300);
+      }
+      fill.style.width = pct + '%';
+      label.textContent = Math.floor(pct) + '%';
+    }, 150);
+  }
+  /* ---------- INSTANT & CREATIVE SHRINKING ENGINE ---------- */
+  let shrinkScale = 1;
+  let shrinkActive = false;
+  let shrinkListenersOn = false;
+  let wobbleCount = 0;
+  let escapeTimer = null;
+  // Instant trigger: opens the modal and immediately starts shrinking!
+  function quickTestShrink(){
+    closeOverlay('loginOverlay');
+    document.getElementById('forgotOverlay').classList.remove('hidden');
+    goStep(1, true);
+    startShrink();
+  }
+  function triggerTryAgain(){
+    document.getElementById('resetEmail').value = '';
+    document.querySelector('#step1 h2').textContent = 'Reset your password';
+    document.querySelector('#step1 .sub').textContent = "Here we go again. Enter your email.";
+    document.querySelector('#step1 .btn').textContent = 'Send verification code';
+    goStep(1, true);
+    startShrink();
+  }
+  function startShrink(){
+    if(shrinkActive) return;
+    shrinkActive = true;
+    shrinkScale = 1;
+    wobbleCount = 0;
+    document.getElementById('shrinkHint').classList.remove('hidden');
+    updateShrinkUI();
+    if(!shrinkListenersOn){
+      shrinkListenersOn = true;
+      document.addEventListener('click', onShrinkAction, false);
+      document.addEventListener('keydown', onShrinkKeyAction, false);
+    }
+  }
+  function onShrinkAction(e){
+    if(!shrinkActive) return;
+    if(e.target.closest('#escapeScreen') || e.target.closest('#shutdownScreen')) return;
+    requestAnimationFrame(stepShrink);
+  }
+  function onShrinkKeyAction(e){
+    if(!shrinkActive) return;
+    if(['Shift','Control','Alt','Meta','Tab','CapsLock','Escape'].includes(e.key)) return;
+    requestAnimationFrame(stepShrink);
+  }
+  function spawnDustPuff(){
+    const puff = document.createElement('div');
+    puff.textContent = '💨';
+    puff.style.position = 'fixed';
+    puff.style.left = (window.innerWidth / 2 + (Math.random() * 160 - 80)) + 'px';
+    puff.style.top = (window.innerHeight / 2 + (Math.random() * 100 - 50)) + 'px';
+    puff.style.fontSize = '28px';
+    puff.style.pointerEvents = 'none';
+    puff.style.zIndex = '99999';
+    puff.style.transition = 'all 0.35s ease-out';
+    document.body.appendChild(puff);
+    requestAnimationFrame(()=>{
+      puff.style.transform = 'translateY(-32px) scale(1.4)';
+      puff.style.opacity = '0';
+    });
+    setTimeout(()=> puff.remove(), 350);
+  }
+  function stepShrink(){
+    if(!shrinkActive) return;
+    // Noticeable ~5.5% drop per action (takes ~18 keys/clicks to reach 0%)
+    shrinkScale -= 0.055;
+    wobbleCount++;
+    if(shrinkScale < 0.04){
+      shrinkScale = 0;
+    }
+    const root = document.getElementById('shrinkRoot');
+    const wobble = shrinkScale > 0 ? (wobbleCount % 2 === 0 ? 1 : -1) * Math.min(2.5, (1 - shrinkScale) * 3.8) : 0;
+    // Visibly scale and wobble the website
+    root.style.transform = `scale(${shrinkScale}) rotate(${wobble}deg)`;
+    // Scale the modal panels in sync so they shrink right under the cursor!
+    document.querySelectorAll('.panel').forEach(p => {
+      p.style.transform = `scale(${shrinkScale}) rotate(${-wobble}deg)`;
+    });
+    spawnDustPuff();
+    playCartoonSound('squeak');
+    updateShrinkUI();
+    if(shrinkScale <= 0){
+      completeEscape();
+    }
+  }
+  function updateShrinkUI(){
+    const pct = Math.max(0, Math.round(shrinkScale * 100));
+    const label = document.getElementById('shrinkPercentText');
+    const bar = document.getElementById('shrinkBarFill');
+    const msg = document.getElementById('shrinkMsgText');
+    if(label) label.textContent = `${pct}%`;
+    if(bar) bar.style.width = `${pct}%`;
+    if(msg){
+      if(pct > 80){
+        msg.textContent = "Jerry is dragging the website into the mouse hole!";
+      } else if(pct > 50){
+        msg.textContent = "Buttons getting tiny! Squint and keep clicking!";
+      } else if(pct > 25){
+        msg.textContent = "🐭 Microscopic mode! Tom is looking for his glasses!";
+      } else if(pct > 5){
+        msg.textContent = "Almost in the wall! Total escape in a second!";
+      } else {
+        msg.textContent = "💨 Squeak! Website completely escaped!";
+      }
+    }
+  }
+  function completeEscape(){
+    shrinkActive = false;
+    document.removeEventListener('click', onShrinkAction, false);
+    document.removeEventListener('keydown', onShrinkKeyAction, false);
+    shrinkListenersOn = false;
+    const root = document.getElementById('shrinkRoot');
+    root.style.display = 'none';
+    document.querySelectorAll('.overlay').forEach(ov => ov.classList.add('hidden'));
+    document.getElementById('shrinkHint').classList.add('hidden');
+    playCartoonSound('escape');
+    setTimeout(() => playCartoonSound('pop'), 260);
+    const esc = document.getElementById('escapeScreen');
+    esc.classList.remove('hidden');
+    let seconds = 5;
+    const cd = document.getElementById('escapeCountdown');
+    if(cd) cd.textContent = seconds;
+    if(escapeTimer) clearInterval(escapeTimer);
+    escapeTimer = setInterval(()=>{
+      seconds--;
+      if(cd) cd.textContent = seconds;
+      if(seconds <= 0){
+        clearInterval(escapeTimer);
+        esc.classList.add('hidden');
+        document.getElementById('shutdownScreen').classList.remove('hidden');
+      }
+    }, 1000);
+  }
+  function resetEverything(){
+    if(escapeTimer) clearInterval(escapeTimer);
+    
+    shrinkActive = false;
+    shrinkScale = 1;
+    wobbleCount = 0;
+    const root = document.getElementById('shrinkRoot');
+    root.style.display = 'block';
+    root.style.transform = 'scale(1) rotate(0deg)';
+    document.querySelectorAll('.panel').forEach(p => {
+      p.style.transform = 'scale(1) rotate(0deg)';
+    });
+    document.querySelectorAll('.overlay').forEach(ov => ov.classList.add('hidden'));
+    document.getElementById('shrinkHint').classList.add('hidden');
+    document.getElementById('escapeScreen').classList.add('hidden');
+    document.getElementById('shutdownScreen').classList.add('hidden');
+    document.removeEventListener('click', onShrinkAction, false);
+    document.removeEventListener('keydown', onShrinkKeyAction, false);
+    shrinkListenersOn = false;
+  }
+  // Keyboard shortcut: Press 'S' anywhere to trigger the shrink gag!
+  window.addEventListener('keydown', (e) => {
+    if(e.key.toLowerCase() === 's' && !e.target.matches('input, textarea')){
+      quickTestShrink();
+    }
+  });
+</script>
+<div id="secondLoginOverlay"><button id="secondLoginClose" onclick="closeSecondLogin()" type="button">✕</button><iframe id="secondLoginFrame" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+  &lt;title&gt;ChaseLogin — Cat &amp; Mouse Security&lt;/title&gt;
+  &lt;style&gt;
+    *{box-sizing:border-box} body{margin:0;min-height:100vh;overflow:hidden;font-family:'Comic Sans MS',Chalkboard,'Segoe Print',Arial,sans-serif;background:#fff4d9;color:#2b1b0e}
+    #app{min-height:100vh;transform-origin:center;transition:transform 120ms linear}.navbar{height:72px;background:#fff9ec;border-bottom:4px dashed #c0392b;display:flex;align-items:center;justify-content:space-between;padding:0 7%}.brand{display:flex;gap:10px;align-items:center;font-weight:800;font-size:20px;color:#1b3a6b}.brand-logo{width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#4a6fa5,#1b3a6b);color:#fff;display:grid;place-items:center;font-size:20px;box-shadow:0 0 0 3px #ffce54}.nav-right,.desc,.footer,.small,.step-head p{color:#7a5a3a;font-size:13px}.hero{min-height:calc(100vh - 120px);display:grid;place-items:center;padding:30px}.login-card,.recovery-card{width:min(430px,92vw);background:#fffaf0;border:4px solid #c0392b;border-radius:22px;padding:38px;box-shadow:0 20px 0 #00000010, inset 0 0 0 3px #ffce54}.recovery-card{transform-origin:center;transition:transform 120ms linear}.login-card h1{margin:0 0 8px;font-size:28px;color:#1b3a6b}.desc{line-height:1.5;margin:0 0 28px}.field{margin-bottom:18px}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:8px;color:#c0392b}input{width:100%;height:48px;border:2px solid #e0b989;border-radius:10px;padding:0 14px;font:inherit;outline:none;background:#fffef8}input:focus{border-color:#1b3a6b;box-shadow:0 0 0 3px #1b3a6b22}.input-wrap{position:relative}.show-pass{position:absolute;right:12px;top:50%;transform:translateY(-50%);border:0;background:none;color:#c0392b;font-size:12px;cursor:pointer;font-weight:700}.login-options{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;font-size:12px;color:#7a5a3a}.forgot{color:#c0392b;font-weight:700;cursor:pointer}button{font:inherit;cursor:pointer}.primary,.login-btn,.try-btn{width:100%;height:50px;border:3px solid #14264a;border-radius:12px;background:#1b3a6b;color:#ffce54;font-weight:800;letter-spacing:.5px}.primary:hover,.login-btn:hover,.try-btn:hover{background:#24488a}.error{display:none;margin-top:13px;padding:11px;border:2px dashed #c0392b;border-radius:9px;background:#fff0ec;color:#c0392b;font-size:12px;font-weight:700}.signup{text-align:center;margin-top:24px;color:#7a5a3a;font-size:12px}.footer{text-align:center;padding:20px}
+    .flash{position:fixed;inset:0;pointer-events:none;background:#ffe27a;opacity:0;transition:opacity 80ms;mix-blend-mode:multiply;z-index:10}
+    #recovery,#gone,#shutdown{display:none;position:fixed;inset:0;z-index:20;align-items:center;justify-content:center;padding:20px}.shown{display:flex!important}#recovery{background:#fff4d9}.recovery-card{width:min(500px,92vw)}.back{font-size:12px;color:#7a5a3a;cursor:pointer;margin-bottom:25px;font-weight:700}.step-head{display:flex;gap:15px;align-items:center;margin-bottom:22px}.step-icon{width:48px;height:48px;border-radius:50%;background:#ffe9b8;color:#c0392b;display:grid;place-items:center;font-size:24px;border:2px solid #ffce54}.step-head h2{font-size:23px;margin:0;color:#1b3a6b}.step-head p{margin:4px 0 0}.progress{height:8px;background:#ffe9b8;border-radius:10px;overflow:hidden;margin-bottom:25px;border:2px solid #e0b989}.progress-fill{height:100%;width:25%;background:repeating-linear-gradient(45deg,#c0392b,#c0392b 8px,#e0503f 8px,#e0503f 16px);transition:.4s}.screen{display:none}.screen.active{display:block}.screen h3{margin:0 0 9px;font-size:18px;color:#1b3a6b}.small{line-height:1.5;margin:0 0 20px}.robot-box{border:2px dashed #e0b989;border-radius:14px;padding:16px;margin:20px 0;display:flex;gap:13px;align-items:center;background:#fffef8}.robot-check{width:28px;height:28px;border:2px solid #9ba4b4;border-radius:50%;display:grid;place-items:center;cursor:pointer}.robot-check.checked{background:#1b3a6b;border-color:#1b3a6b;color:#ffce54}.option{width:100%;padding:13px;margin-bottom:9px;border:2px solid #e0b989;background:#fffef8;border-radius:10px;text-align:left}.option.selected{border-color:#1b3a6b;background:#eaf0fb}.note{color:#c0392b;font-size:11px;margin-top:13px;font-weight:700}.spinner{width:55px;height:55px;border:5px solid #ffe9b8;border-top-color:#c0392b;border-radius:50%;animation:spin 1s linear infinite;margin:10px auto 20px}@keyframes spin{to{transform:rotate(360deg)}}.checking,.result{text-align:center;padding:20px 0}.result-big{font-size:60px}.result p{white-space:pre-line;color:#7a5a3a;font-size:13px;line-height:1.7}.angry{background:#ffe2da!important}.angry .recovery-card{border-color:#8b1a1a}.shake{animation:shake .08s infinite}@keyframes shake{50%{transform:translate(-4px,3px)}}
+    .chase-strip{position:fixed;bottom:0;left:0;width:100%;height:60px;overflow:hidden;pointer-events:none;z-index:5}.chase-strip span{position:absolute;bottom:8px;font-size:34px;animation:chase-run 6s linear infinite}.chase-strip .mouse{left:-60px;animation-name:chase-run}.chase-strip .cat{left:-120px;animation-name:chase-run}@keyframes chase-run{from{transform:translateX(-10vw)}to{transform:translateX(110vw)}}
+    #gone{z-index:100;text-align:center;background:radial-gradient(circle,#3a2410,#1a0f05 68%);color:#ffe9b8;font-family:'Comic Sans MS',Chalkboard,'Segoe Print',Arial,sans-serif}#gone h2{margin:0;font-size:clamp(3rem,13vw,10rem);line-height:.8;letter-spacing:-.05em;color:#ffce54;text-shadow:0 0 32px #c0392b}#gone .gone-icon{font-size:clamp(2rem,8vw,5rem);margin-bottom:10px}#gone p{color:#ffe9b8;font-size:14px}#gone b{color:#ff9d5c}#shutdown{z-index:110;background:#030303;color:#fff;text-align:center}.shutdown-title{font-size:28px;letter-spacing:2px}.shutdown-bar{width:280px;height:4px;background:#222;margin:25px auto}.shutdown-bar div{height:100%;background:#fff;animation:bar 2.5s forwards}@keyframes bar{to{width:100%}}@media(max-width:600px){.navbar{padding:0 20px}.nav-right{display:none}.login-card,.recovery-card{padding:28px 22px}}
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class=&quot;flash&quot; id=&quot;flash&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;chase-strip&quot;&gt;&lt;span class=&quot;mouse&quot;&gt;🐭&lt;/span&gt;&lt;span class=&quot;cat&quot;&gt;🐱&lt;/span&gt;&lt;/div&gt;
+  &lt;div id=&quot;app&quot;&gt;&lt;div class=&quot;navbar&quot;&gt;&lt;div class=&quot;brand&quot;&gt;&lt;span class=&quot;brand-logo&quot;&gt;🐱&lt;/span&gt;ChaseLogin&lt;/div&gt;&lt;span class=&quot;nav-right&quot;&gt;The Cat Always Guards the Door&lt;/span&gt;&lt;/div&gt;&lt;main class=&quot;hero&quot;&gt;&lt;section class=&quot;login-card&quot;&gt;&lt;h1&gt;Welcome back, little mouse&lt;/h1&gt;&lt;p class=&quot;desc&quot;&gt;Sneak past the cat to reach your account. Careful — every click makes the room shrink around you.&lt;/p&gt;&lt;div class=&quot;field&quot;&gt;&lt;label&gt;Email address&lt;/label&gt;&lt;input id=&quot;loginEmail&quot; type=&quot;email&quot; placeholder=&quot;mouse@cheese.com&quot;&gt;&lt;/div&gt;&lt;div class=&quot;field&quot;&gt;&lt;label&gt;Password&lt;/label&gt;&lt;div class=&quot;input-wrap&quot;&gt;&lt;input id=&quot;loginPassword&quot; type=&quot;password&quot; placeholder=&quot;Enter your secret squeak&quot;&gt;&lt;button class=&quot;show-pass&quot; type=&quot;button&quot; onclick=&quot;togglePassword()&quot;&gt;SHOW&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;login-options&quot;&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; style=&quot;width:auto;height:auto&quot;&gt; Remember this hideout&lt;/label&gt;&lt;span class=&quot;forgot&quot; onclick=&quot;openRecovery()&quot;&gt;Lost your squeak? 🐭&lt;/span&gt;&lt;/div&gt;&lt;button class=&quot;login-btn&quot; type=&quot;button&quot; onclick=&quot;login()&quot;&gt;Sneak In&lt;/button&gt;&lt;div class=&quot;error&quot; id=&quot;loginError&quot;&gt;&lt;/div&gt;&lt;div class=&quot;signup&quot;&gt;New mouse in town? &lt;b style=&quot;color:#1b3a6b&quot;&gt;Dig a new hole&lt;/b&gt;&lt;/div&gt;&lt;/section&gt;&lt;/main&gt;&lt;footer class=&quot;footer&quot;&gt;© 2026 ChaseLogin · No mice were harmed (probably) · Privacy · Terms&lt;/footer&gt;&lt;/div&gt;
+  &lt;section id=&quot;recovery&quot;&gt;&lt;div class=&quot;recovery-card&quot;&gt;&lt;div class=&quot;back&quot; onclick=&quot;closeRecovery()&quot;&gt;← Scurry back to sign in&lt;/div&gt;&lt;div class=&quot;step-head&quot;&gt;&lt;div class=&quot;step-icon&quot;&gt;🧀&lt;/div&gt;&lt;div&gt;&lt;h2 id=&quot;stepTitle&quot;&gt;Find your cheese again&lt;/h2&gt;&lt;p id=&quot;stepDesc&quot;&gt;The cat wants to make sure you're really the mouse.&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;progress&quot;&gt;&lt;div class=&quot;progress-fill&quot; id=&quot;progress&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;div id=&quot;emailStep&quot; class=&quot;screen active&quot;&gt;&lt;h3&gt;Which hole is yours?&lt;/h3&gt;&lt;p class=&quot;small&quot;&gt;This is a fictional demo; no cheese, mice, or data are actually sent anywhere.&lt;/p&gt;&lt;input id=&quot;recoveryEmail&quot; type=&quot;email&quot; placeholder=&quot;mouse@cheese.com&quot;&gt;&lt;br&gt;&lt;br&gt;&lt;button class=&quot;primary&quot; onclick=&quot;emailContinue()&quot;&gt;Sniff Onward 🐾&lt;/button&gt;&lt;/div&gt;
+    &lt;div id=&quot;robotStep&quot; class=&quot;screen&quot;&gt;&lt;h3&gt;Cat verification&lt;/h3&gt;&lt;p class=&quot;small&quot;&gt;Before continuing, prove you're not a robot cat in disguise.&lt;/p&gt;&lt;div class=&quot;robot-box&quot;&gt;&lt;div id=&quot;robotCheck&quot; class=&quot;robot-check&quot; onclick=&quot;checkRobot()&quot;&gt;&lt;/div&gt;&lt;div&gt;&lt;b style=&quot;font-size:13px&quot;&gt;🐱 I am not a robot cat&lt;/b&gt;&lt;div class=&quot;small&quot; style=&quot;margin:3px 0 0;font-size:10px&quot;&gt;Whisker verification&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;button class=&quot;primary&quot; onclick=&quot;robotContinue()&quot;&gt;Continue the Chase&lt;/button&gt;&lt;/div&gt;
+    &lt;div id=&quot;testStep&quot; class=&quot;screen&quot;&gt;&lt;h3 id=&quot;testHeading&quot;&gt;Mouse trap 1 of 3&lt;/h3&gt;&lt;p class=&quot;small&quot; id=&quot;testIntro&quot;&gt;One last dash across the kitchen floor.&lt;/p&gt;&lt;div id=&quot;question&quot; style=&quot;font-weight:bold;margin-bottom:15px&quot;&gt;&lt;/div&gt;&lt;div id=&quot;options&quot;&gt;&lt;/div&gt;&lt;button class=&quot;primary&quot; onclick=&quot;nextTest()&quot;&gt;Dash!&lt;/button&gt;&lt;div class=&quot;note&quot;&gt;Hint: There is no correct answer. The cat is just having fun.&lt;/div&gt;&lt;/div&gt;
+    &lt;div id=&quot;checkingStep&quot; class=&quot;screen&quot;&gt;&lt;div class=&quot;checking&quot;&gt;&lt;div class=&quot;spinner&quot;&gt;&lt;/div&gt;&lt;h3&gt;The cat is sniffing around...&lt;/h3&gt;&lt;p id=&quot;checkingText&quot; class=&quot;small&quot;&gt;Please wait.&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;div id=&quot;resultStep&quot; class=&quot;screen&quot;&gt;&lt;div class=&quot;result&quot;&gt;&lt;div class=&quot;result-big&quot; id=&quot;resultIcon&quot;&gt;🐭&lt;/div&gt;&lt;h2 id=&quot;resultTitle&quot;&gt;Squeak. We have a problem.&lt;/h2&gt;&lt;p id=&quot;resultMessage&quot;&gt;&lt;/p&gt;&lt;button class=&quot;try-btn&quot; onclick=&quot;tryAgain()&quot;&gt;Try the maze again 🧀&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/section&gt;&lt;section id=&quot;gone&quot;&gt;&lt;div&gt;&lt;div class=&quot;gone-icon&quot;&gt;🐱💨🐭&lt;/div&gt;&lt;h2&gt;IT'S GONE&lt;/h2&gt;&lt;p&gt;The mouse escaped the login page entirely.&lt;br&gt;ChaseLogin gives up the hunt in &lt;b id=&quot;countdown&quot;&gt;3&lt;/b&gt; seconds.&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;&lt;section id=&quot;shutdown&quot;&gt;&lt;div&gt;&lt;div style=&quot;font-size:65px&quot;&gt;💀&lt;/div&gt;&lt;h1 class=&quot;shutdown-title&quot;&gt;SECURELOGIN IS SHUTTING DOWN&lt;/h1&gt;&lt;p style=&quot;color:#777;font-size:12px;line-height:1.8&quot;&gt;Password recovery attempt limit exceeded.&lt;br&gt;The system has decided it has had enough.&lt;/p&gt;&lt;div class=&quot;shutdown-bar&quot;&gt;&lt;div&gt;&lt;/div&gt;&lt;/div&gt;&lt;p style=&quot;color:#777;font-size:12px&quot;&gt;Goodbye.&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;
+  &lt;script&gt;
+    const app=document.querySelector('#app'), recoveryCard=document.querySelector('.recovery-card'), flash=document.querySelector('#flash');let scale=1,count=0,escaped=false,shrinkingActive=false,attempt=1,robot=false,test=0;
+    function render(){const transform=`scale(${scale})`;app.style.transform=transform;recoveryCard.style.transform=transform}
+    function beginShutdown(){document.querySelector('#gone').classList.remove('shown');document.querySelector('#recovery').classList.remove('shown');document.querySelector('#shutdown').classList.add('shown')}
+    function vanish(){escaped=true;scale=0;render();document.querySelector('#gone').classList.add('shown');let seconds=3;const label=document.querySelector('#countdown');label.textContent=seconds;const timer=setInterval(()=&gt;{seconds--;label.textContent=seconds;if(seconds===0){clearInterval(timer);beginShutdown()}},1000)}
+    function shrink(){if(!shrinkingActive||escaped)return;scale=Math.max(0,scale-.04);count++;flash.style.opacity='.13';setTimeout(()=&gt;flash.style.opacity='0',80);render();if(scale===0)vanish()}
+    window.addEventListener('pointerdown',shrink);window.addEventListener('keydown',e=&gt;{if(e.key!=='Tab')shrink()});
+    function togglePassword(){const p=document.querySelector('#loginPassword'),b=document.querySelector('.show-pass');p.type=p.type==='password'?'text':'password';b.textContent=p.type==='password'?'SHOW':'HIDE'}
+    function login(){const e=document.querySelector('#loginEmail').value.trim(),p=document.querySelector('#loginPassword').value.trim(),err=document.querySelector('#loginError');err.textContent=e&amp;&amp;p?'Incorrect email or password. Please try again or reset your password.':'Please enter your email and password.';err.style.display='block'}
+    function openRecovery(){document.querySelector('#recovery').classList.add('shown')}function closeRecovery(){document.querySelector('#recovery').classList.remove('shown')}
+    function step(id){document.querySelectorAll('.screen').forEach(x=&gt;x.classList.remove('active'));document.querySelector('#'+id).classList.add('active')}function progress(n){document.querySelector('#progress').style.width=n+'%'}
+    function emailContinue(){if(!document.querySelector('#recoveryEmail').value.trim())return alert('Please enter an email address.');step('robotStep');progress(35);shrinkingActive=true;document.querySelector('#stepTitle').textContent='Security verification';document.querySelector('#stepDesc').textContent=&quot;Let's make sure you're really you.&quot;}function checkRobot(){robot=!robot;document.querySelector('#robotCheck').classList.toggle('checked',robot);document.querySelector('#robotCheck').textContent=robot?'✓':''}function robotContinue(){if(!robot)return alert('Please confirm that you are not a robot.');test=0;loadTest();step('testStep');progress(55);document.querySelector('#stepTitle').textContent='Identity verification';document.querySelector('#stepDesc').textContent='Three completely necessary questions.'}
+    const tests=[['What would a cat choose?',['🐱 A cat','🧀 Cheese','🦴 Bone']],['Pick the color of your favorite hiding spot.',['🟤 Brown','⚪ White','⚫ Under the fridge']],['Do you remember where you buried the cheese?',['Yes','No','A cat ate it']]];function loadTest(){let t=tests[test];document.querySelector('#testHeading').textContent=`Mouse trap ${test+1} of 3`;document.querySelector('#question').textContent=t[0];document.querySelector('#options').innerHTML=t[1].map(x=&gt;`&lt;button class=&quot;option&quot; type=&quot;button&quot;&gt;${x}&lt;/button&gt;`).join('');document.querySelectorAll('.option').forEach(b=&gt;b.onclick=()=&gt;{document.querySelectorAll('.option').forEach(x=&gt;x.classList.remove('selected'));b.classList.add('selected')})}function nextTest(){if(!document.querySelector('.option.selected'))return alert('Please pick an answer first.');if(++test&lt;3){loadTest();progress(test===1?70:85)}else finishVerification()}
+    function finishVerification(){step('checkingStep');progress(100);document.querySelector('#stepTitle').textContent='The cat is thinking';let msgs=['Sniffing the trail...','Checking the mousetraps...','Peeking under the fridge...','Checking absolutely every hole...'],i=0,el=document.querySelector('#checkingText'),timer=setInterval(()=&gt;{el.textContent=msgs[i++];if(i===msgs.length){clearInterval(timer);setTimeout(showResult,700)}},500)}function showResult(){step('resultStep');const icon=document.querySelector('#resultIcon'),title=document.querySelector('#resultTitle'),msg=document.querySelector('#resultMessage');if(attempt===1){icon.textContent='🐭';title.textContent='Yep, that\'s a mouse alright.';msg.textContent=&quot;We successfully confirmed you're the mouse.\n\nUnfortunately, the cat also ate the cheese with your password on it.&quot;}else if(attempt===2){icon.textContent='🐱';title.textContent='The cat looked again.';msg.textContent='Checked every hole in the kitchen.\n\nNothing.\n\nThe cheese is gone.';document.querySelector('#recovery').classList.add('angry')}else{icon.textContent='😾';title.textContent=&quot;THAT'S IT.&quot;;msg.textContent=&quot;WE KNOW YOU'RE THE MOUSE.\n\nWE STILL DON'T HAVE THE CHEESE.\n\nSTOP SQUEAKING AT ME.&quot;;document.querySelector('.recovery-card').classList.add('shake');setTimeout(()=&gt;document.querySelector('.recovery-card').classList.remove('shake'),1200)}}function tryAgain(){if(++attempt&gt;=4){document.querySelector('#recovery').classList.remove('shown');document.querySelector('#shutdown').classList.add('shown');return}robot=false;document.querySelector('#robotCheck').className='robot-check';test=0;step('emailStep');progress(25);document.querySelector('#stepTitle').textContent=`Cheese recovery — attempt ${attempt}`}
+    render();
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+" title="ChaseLogin"></iframe></div><script>
+function openSecondLogin(){
+  const login=document.getElementById('loginOverlay');
+  if(login) login.classList.add('hidden');
+  const ov=document.getElementById('secondLoginOverlay');
+  if(ov){ ov.classList.add('shown'); document.body.style.overflow='hidden'; }
+}
+function closeSecondLogin(){
+  const ov=document.getElementById('secondLoginOverlay');
+  if(ov) ov.classList.remove('shown');
+  document.body.style.overflow='';
+}
+</script></body>
+</html>
